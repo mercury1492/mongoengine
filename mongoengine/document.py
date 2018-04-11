@@ -86,6 +86,14 @@ class EmbeddedDocument(BaseDocument, metaclass=DocumentMetaclass):
     def reload(self, *args, **kwargs):
         self._instance.reload(*args, **kwargs)
 
+    def __hash__(self):
+        """Fabrice Deschatres: Added this for python 3
+
+        Python3: when overriding __eq__, we need to override __hash__
+        (otherwise __hash__ set to None and object not hashable)
+        https://www.asmeurer.com/blog/posts/what-happens-when-you-mess-with-hashing-in-python/
+        """
+        return super(EmbeddedDocument, self).__hash__()
 
 class Document(BaseDocument, metaclass=TopLevelDocumentMetaclass):
     """The base class used for defining the structure and properties of
