@@ -23,15 +23,15 @@ if PY3:
     txt_type = str
 else:
     try:
-        from cStringIO import StringIO
+        from io import StringIO
     except ImportError:
-        from StringIO import StringIO
+        from io import StringIO
 
     # Conversion to binary only necessary in Python 3
     def b(s):
         return s
 
     bin_type = str
-    txt_type = unicode
+    txt_type = str
 
 str_types = (bin_type, txt_type)

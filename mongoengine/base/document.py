@@ -72,8 +72,8 @@ class BaseDocument(object):
         # Check if there are undefined fields supplied to the constructor,
         # if so raise an Exception.
         if not self._dynamic and (self._meta.get('strict', True) or _created):
-            for var in values.keys():
-                if var not in self._fields.keys() + ['id', 'pk', '_cls', '_text_score']:
+            for var in list(values.keys()):
+                if var not in list(self._fields.keys()) + ['id', 'pk', '_cls', '_text_score']:
                     msg = (
                         "The field '{0}' does not exist on the document '{1}'"
                     ).format(var, self._class_name)
@@ -88,7 +88,7 @@ class BaseDocument(object):
         self._dynamic_fields = SON()
 
         # Assign default values to instance
-        for key, field in self._fields.iteritems():
+        for key, field in self._fields.items():
             if self._db_field_map.get(key, key) in __only_fields:
                 continue
             value = getattr(self, key, None)
@@ -100,14 +100,14 @@ class BaseDocument(object):
         # Set passed values after initialisation
         if self._dynamic:
             dynamic_data = {}
-            for key, value in values.iteritems():
+            for key, value in values.items():
                 if key in self._fields or key == '_id':
                     setattr(self, key, value)
                 elif self._dynamic:
                     dynamic_data[key] = value
         else:
             FileField = _import_class('FileField')
-            for key, value in values.iteritems():
+            for key, value in values.items():
                 if key == '__auto_convert':
                     continue
                 key = self._reverse_db_field_map.get(key, key)
@@ -125,7 +125,7 @@ class BaseDocument(object):
 
         if self._dynamic:
             self._dynamic_lock = False
-            for key, value in dynamic_data.iteritems():
+            for key, value in dynamic_data.items():
                 setattr(self, key, value)
 
         # Flag initialised
@@ -210,7 +210,7 @@ class BaseDocument(object):
                 setattr(self, '_fields_ordered', _super_fields_ordered)
 
         dynamic_fields = data.get('_dynamic_fields') or SON()
-        for k in dynamic_fields.keys():
+        for k in list(dynamic_fields.keys()):
             setattr(self, k, data["_data"].get(k))
 
     def __iter__(self):
@@ -257,7 +257,7 @@ class BaseDocument(object):
             if PY3:
                 return self.__unicode__()
             else:
-                return unicode(self).encode('utf-8')
+                return str(self).encode('utf-8')
         return txt_type('%s object' % self.__class__.__name__)
 
     def __eq__(self, other):
@@ -376,7 +376,7 @@ class BaseDocument(object):
         if clean:
             try:
                 self.clean()
-            except ValidationError, error:
+            except ValidationError as error:
                 errors[NON_FIELD_ERRORS] = error
 
         # Get a list of tuples of field names and their current values
@@ -395,9 +395,9 @@ class BaseDocument(object):
                         field._validate(value, clean=clean)
                     else:
                         field._validate(value)
-                except ValidationError, error:
+                except ValidationError as error:
                     errors[field.name] = error.errors or error
-                except (ValueError, AttributeError, AssertionError), error:
+                except (ValueError, AttributeError, AssertionError) as error:
                     errors[field.name] = error
             elif field.required and not getattr(field, '_auto_gen', False):
                 errors[field.name] = ValidationError('Field is required',
@@ -442,12 +442,12 @@ class BaseDocument(object):
             return cls(**value)
 
         data = {}
-        for k, v in value.items():
+        for k, v in list(value.items()):
             key = name if is_list else k
             data[k] = self.__expand_dynamic_values(key, v)
 
         if is_list:  # Convert back to a list
-            data_items = sorted(data.items(), key=operator.itemgetter(0))
+            data_items = sorted(list(data.items()), key=operator.itemgetter(0))
             value = [v for k, v in data_items]
         else:
             value = data
@@ -523,7 +523,7 @@ class BaseDocument(object):
         if not hasattr(data, 'items'):
             iterator = enumerate(data)
         else:
-            iterator = data.iteritems()
+            iterator = iter(data.items())
 
         for index, value in iterator:
             list_key = "%s%s." % (key, index)
@@ -578,7 +578,7 @@ class BaseDocument(object):
                     continue
                 elif isinstance(field, SortedListField) and field._ordering:
                     # if ordering is affected whole list is changed
-                    if any(map(lambda d: field._ordering in d._changed_fields, data)):
+                    if any([field._ordering in d._changed_fields for d in data]):
                         changed_fields.append(db_field_name)
                         continue
 
@@ -622,7 +622,7 @@ class BaseDocument(object):
                 del set_data['_id']
 
         # Determine if any changed items were actually unset.
-        for path, value in set_data.items():
+        for path, value in list(set_data.items()):
             if value or isinstance(value, (numbers.Number, bool)):
                 continue
 
@@ -684,7 +684,7 @@ class BaseDocument(object):
         # get the class name from the document, falling back to the given
         # class if unavailable
         class_name = son.get('_cls', cls._class_name)
-        data = dict(("%s" % key, value) for key, value in son.iteritems())
+        data = dict(("%s" % key, value) for key, value in son.items())
 
         # Return correct subclass for document type
         if class_name != cls._class_name:
@@ -697,7 +697,7 @@ class BaseDocument(object):
         if not _auto_dereference:
             fields = copy.copy(fields)
 
-        for field_name, field in fields.iteritems():
+        for field_name, field in fields.items():
             field._auto_dereference = _auto_dereference
             if field.db_field in data:
                 value = data[field.db_field]
@@ -706,7 +706,7 @@ class BaseDocument(object):
                                         else field.to_python(value))
                     if field_name != field.db_field:
                         del data[field.db_field]
-                except (AttributeError, ValueError), e:
+                except (AttributeError, ValueError) as e:
                     errors_dict[field_name] = e
             elif field.default:
                 default = field.default
@@ -719,14 +719,14 @@ class BaseDocument(object):
 
         if errors_dict:
             errors = "\n".join(["%s - %s" % (k, v)
-                                for k, v in errors_dict.items()])
+                                for k, v in list(errors_dict.items())])
             msg = ("Invalid data to create a `%s` instance.\n%s"
                    % (cls._class_name, errors))
             raise InvalidDocumentError(msg)
 
         if cls.STRICT:
             data = dict((k, v)
-                        for k, v in data.iteritems() if k in cls._fields)
+                        for k, v in data.items() if k in cls._fields)
         obj = cls(__auto_convert=False, _created=created, __only_fields=only_fields, **data)
         obj._changed_fields = changed_fields
         if not _auto_dereference:
@@ -766,7 +766,7 @@ class BaseDocument(object):
     def _build_index_spec(cls, spec):
         """Build a PyMongo index spec from a MongoEngine index spec.
         """
-        if isinstance(spec, basestring):
+        if isinstance(spec, str):
             spec = {'fields': [spec]}
         elif isinstance(spec, (list, tuple)):
             spec = {'fields': list(spec)}
@@ -848,7 +848,7 @@ class BaseDocument(object):
         Find and set unique indexes
         """
         unique_indexes = []
-        for field_name, field in cls._fields.items():
+        for field_name, field in list(cls._fields.items()):
             sparse = field.sparse
             # Generate a list of indexes needed by uniqueness constraints
             if field.unique:
@@ -856,7 +856,7 @@ class BaseDocument(object):
 
                 # Add any unique_with fields to the back of the index spec
                 if field.unique_with:
-                    if isinstance(field.unique_with, basestring):
+                    if isinstance(field.unique_with, str):
                         field.unique_with = [field.unique_with]
 
                     # Convert unique_with field names to real field names
@@ -903,7 +903,7 @@ class BaseDocument(object):
         geo_field_types = tuple([_import_class(field)
                                  for field in geo_field_type_names])
 
-        for field in cls._fields.values():
+        for field in list(cls._fields.values()):
             if not isinstance(field, geo_field_types):
                 continue
             if hasattr(field, 'document_type'):
@@ -1004,7 +1004,7 @@ class BaseDocument(object):
 
     def __set_field_display(self):
         """Dynamically set the display value for a field with choices"""
-        for attr_name, field in self._fields.items():
+        for attr_name, field in list(self._fields.items()):
             if field.choices:
                 if self._dynamic:
                     obj = self

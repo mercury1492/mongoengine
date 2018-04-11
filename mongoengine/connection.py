@@ -131,7 +131,7 @@ def get_connection(alias=DEFAULT_CONNECTION_NAME, reconnect=False):
             # Discard port since it can't be used on MongoReplicaSetClient
             conn_settings.pop('port', None)
             # Discard replicaSet if not base string
-            if not isinstance(conn_settings['replicaSet'], basestring):
+            if not isinstance(conn_settings['replicaSet'], str):
                 conn_settings.pop('replicaSet', None)
             if not IS_PYMONGO_3:
                 connection_class = MongoReplicaSetClient
@@ -141,7 +141,7 @@ def get_connection(alias=DEFAULT_CONNECTION_NAME, reconnect=False):
             connection = None
             # check for shared connections
             connection_settings_iterator = (
-                (db_alias, settings.copy()) for db_alias, settings in _connection_settings.iteritems())
+                (db_alias, settings.copy()) for db_alias, settings in _connection_settings.items())
             for db_alias, connection_settings in connection_settings_iterator:
                 connection_settings.pop('name', None)
                 connection_settings.pop('username', None)
@@ -152,7 +152,7 @@ def get_connection(alias=DEFAULT_CONNECTION_NAME, reconnect=False):
                     break
 
             _connections[alias] = connection if connection else connection_class(**conn_settings)
-        except Exception, e:
+        except Exception as e:
             raise ConnectionError("Cannot connect to database %s :\n%s" % (alias, e))
     return _connections[alias]
 
