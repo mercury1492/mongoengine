@@ -257,6 +257,14 @@ class FloatField(BaseField):
             value = float(value)
         except ValueError:
             pass
+        except Exception as e:
+            """ Fabrice Deschatres
+            Handle case where value is None for python3 (not sure why that was not needed for python2)
+            """
+            if value is None:
+                return value
+            else:
+                raise e
         return value
 
     def validate(self, value):
