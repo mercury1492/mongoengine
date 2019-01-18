@@ -92,7 +92,10 @@ def query(_doc_cls=None, **kwargs):
                     else:
                         value = field
                 else:
-                    value = field.prepare_query_value(op, value)
+                    try:
+                        value = field.prepare_query_value(op, value)
+                    except Exception as e:
+                        raise RuntimeError("Can't prepare_query_value on field {0}: {1}".format(str(field.db_field), str(e)))
 
                     if isinstance(field, CachedReferenceField) and value:
                         value = value['_id']
