@@ -115,7 +115,10 @@ class BaseDocument(object):
                     if __auto_convert and value is not None:
                         field = self._fields.get(key)
                         if field and not isinstance(field, FileField):
-                            value = field.to_python(value)
+                            try:
+                                value = field.to_python(value)
+                            except Exception as e:
+                                raise RuntimeError("Can't convert field {0}: {1}".format(key, str(e)))
                     setattr(self, key, value)
                 else:
                     self._data[key] = value
