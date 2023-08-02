@@ -1,7 +1,7 @@
 import copy
 import operator
 import numbers
-from collections import Hashable
+from collections.abc import Hashable
 from functools import partial
 
 import pymongo
